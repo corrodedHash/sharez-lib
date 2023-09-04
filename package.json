@@ -1,0 +1,33 @@
+{
+  "name": "sharez",
+  "version": "0.1.0",
+  "description": "Library to split secrets using Shamir's Secret Sharing",
+  "main": "index.js",
+  "exports": {
+    ".": {
+      "import": "./dist-esm/bundle.min.mjs",
+      "require": "./dist-cjs/bundle.min.cjs"
+    },
+    "./server": "./server/index.js"
+  },
+  "scripts": {
+    "test": "TS_NODE_PROJECT='tsconfig.mocha.json' mocha --full-trace",
+    "build": "rollup -c"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@rollup/plugin-typescript": "^11.1.3",
+    "mocha": "^10.2.0",
+    "rollup": "^3.28.1",
+    "ts-node": "^10.9.1",
+    "tslib": "^2.6.2",
+    "typescript": "^5.2.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.3.6",
+    "@types/mocha": "^10.0.1",
+    "chai": "^4.3.8"
+  }
+}
