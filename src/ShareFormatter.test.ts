@@ -1,4 +1,4 @@
-import { test } from "mocha";
+import { describe, it } from "mocha";
 import { assert } from "chai";
 import { getRandomInt } from "./basic";
 
