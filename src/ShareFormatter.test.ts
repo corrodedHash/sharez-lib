@@ -1,5 +1,5 @@
 import { test } from "mocha";
-import { assert, expect } from "chai";
+import { assert } from "chai";
 import { getRandomInt } from "./basic";
 
 import { ShareFormatter, generateKeyPair } from "./ShareFormatter";
@@ -10,10 +10,11 @@ test("Sanity test for ShareFormatter", async () => {
     const share_id = getRandomInt(1, 256);
     const shared_formatter = new ShareFormatter(data, { share_id });
     const shared = await shared_formatter.toString();
-    expect(
+    assert.deepEqual(
       await ShareFormatter.fromString(shared),
+      shared_formatter,
       `${share_id} ${shared} ${data}`
-    ).to.deep.equal(shared_formatter);
+    );
   }
 });
 
@@ -24,9 +25,9 @@ test("Test signing", async () => {
   const share_id = getRandomInt(1, 256);
   const shared_formatter = new ShareFormatter(data, { share_id });
   await shared_formatter.sign(kp);
-  expect(await shared_formatter.verify()).to.be.true;
+  assert(await shared_formatter.verify());
   const shared = await shared_formatter.toString();
   const rebuilt = await ShareFormatter.fromString(shared);
-  expect(rebuilt).to.deep.equal(shared_formatter);
-  expect(await rebuilt.verify()).to.be.true;
+  assert.deepEqual(rebuilt, shared_formatter);
+  assert(await rebuilt.verify());
 });
