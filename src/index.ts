@@ -1,6 +1,6 @@
-export { SSS } from "./sss";
+export { SSS } from "./sss"
 export {
   ShareFormatter,
   generateKeyPair,
   fromRawPrivateKey,
-} from "./ShareFormatter";
+} from "./ShareFormatter"

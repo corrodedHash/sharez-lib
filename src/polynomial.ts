@@ -1,4 +1,4 @@
-import { zero_array } from './basic'
+import { zero_array } from "./basic"
 
 export type HandlerType<T> = {
   mul: (a: T, b: T) => T
@@ -18,14 +18,15 @@ export class Polynomial<T> {
   }
 
   multiply(other: Polynomial<T>): Polynomial<T> {
-    const result_length = this.coefficients.length + other.coefficients.length - 1
+    const result_length =
+      this.coefficients.length + other.coefficients.length - 1
     const new_coeffs = this.coefficients
       .map((x, x_index) => {
         const r = other.coefficients.map((y) => this.handler.mul(x, y))
         const front = zero_array(x_index).map(this.handler.zero)
-        const back = zero_array(result_length - other.coefficients.length - x_index).map(
-          this.handler.zero
-        )
+        const back = zero_array(
+          result_length - other.coefficients.length - x_index
+        ).map(this.handler.zero)
         return front.concat(r, back)
       })
       .reduce((a, b) => a.map((v, vi) => this.handler.add(v, b[vi])))
@@ -74,7 +75,13 @@ export function interpolate<T>(
       .reduce((a, b) => handler.mul(a, b))
 
     const numerator = filtered_x
-      .map((v) => new Polynomial([handler.sub(handler.zero(), v), handler.one()], handler))
+      .map(
+        (v) =>
+          new Polynomial(
+            [handler.sub(handler.zero(), v), handler.one()],
+            handler
+          )
+      )
       .reduce((a, b) => a.multiply(b))
     const result = numerator.multiply(
       new Polynomial([handler.div(handler.one(), denominator)], handler)

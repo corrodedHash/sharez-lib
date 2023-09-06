@@ -1,14 +1,23 @@
-import { fromBase64String, toBase64String } from './basic'
+import { fromBase64String, toBase64String } from "./basic"
 
-const SIGN_ALGO = 'ECDSA'
-const SIGN_CURVE = 'P-256'
+export const KEY_ALGO: EcKeyImportParams = {
+  name: "ECDSA",
+  namedCurve: "P-256",
+}
 
-const SHRZ_PREFIX = 'shrz'
+const SHRZ_PREFIX = "shrz"
 
-const SIGN_PUBKEY_SHARE_FORMAT = 'raw'
-const SIGN_HASH = 'SHA-256'
+const SIGN_PUBKEY_SHARE_FORMAT = "raw"
+const SIGN_HASH = "SHA-256"
 
-const BASE64OPTIONS = { padding: false, extra_chars: '-_' }
+const BASE64OPTIONS = { padding: false, extra_chars: "-_" }
+
+function fb64(input: string): Uint8Array {
+  return fromBase64String(input, BASE64OPTIONS)
+}
+function tb64(input: Uint8Array): string {
+  return toBase64String(input, BASE64OPTIONS)
+}
 
 export class ShareFormatter {
   share_data: Uint8Array
@@ -31,23 +40,26 @@ export class ShareFormatter {
 
   private get_signable_data(): Uint8Array {
     const id_array = this.share_id !== undefined ? [this.share_id] : []
-    const req_array = this.share_requirement !== undefined ? [this.share_requirement] : []
-    return Uint8Array.from(id_array.concat(req_array).concat([...this.share_data]))
+    const req_array =
+      this.share_requirement !== undefined ? [this.share_requirement] : []
+    return Uint8Array.from(
+      id_array.concat(req_array).concat([...this.share_data])
+    )
   }
 
   async sign(keypair: CryptoKeyPair) {
     const signature = await crypto.subtle.sign(
-      { name: SIGN_ALGO, hash: { name: SIGN_HASH } },
+      { name: KEY_ALGO.name, hash: { name: SIGN_HASH } },
       keypair.privateKey,
       this.get_signable_data()
     )
-    const publicKey = await crypto.subtle.exportKey('spki', keypair.publicKey)
+    const publicKey = await crypto.subtle.exportKey("spki", keypair.publicKey)
     const pubkey = await crypto.subtle.importKey(
-      'spki',
+      "spki",
       publicKey,
-      { name: SIGN_ALGO, namedCurve: SIGN_CURVE },
+      KEY_ALGO,
       true,
-      ['verify']
+      ["verify"]
     )
 
     this.signature = new Uint8Array(signature)
@@ -56,14 +68,14 @@ export class ShareFormatter {
 
   async verify(pubkey?: CryptoKey) {
     if (this.signature === undefined) {
-      throw new Error('Cannot verify share with no signature')
+      throw new Error("Cannot verify share with no signature")
     }
     const used_pubkey = this.pubkey || pubkey
     if (used_pubkey === undefined) {
-      throw new Error('Cannot verify share with no public key information')
+      throw new Error("Cannot verify share with no public key information")
     }
     return await crypto.subtle.verify(
-      { name: SIGN_ALGO, hash: { name: SIGN_HASH } },
+      { name: KEY_ALGO.name, hash: { name: SIGN_HASH } },
       used_pubkey,
       this.signature,
       this.get_signable_data()
@@ -71,12 +83,12 @@ export class ShareFormatter {
   }
 
   static async fromString(input: string): Promise<ShareFormatter> {
-    const base64chars = 'a-zA-Z0-9-_'
+    const base64chars = "a-zA-Z0-9-_"
 
     const raw_regex = new RegExp(`^[${base64chars}]+$`)
     const raw_match = raw_regex.exec(input)
     if (raw_match !== null) {
-      return new ShareFormatter(fromBase64String(raw_match[0], BASE64OPTIONS))
+      return new ShareFormatter(fb64(raw_match[0]))
     }
 
     const sharez_regex = new RegExp(
@@ -85,29 +97,30 @@ export class ShareFormatter {
     )
 
     const share_match = sharez_regex.exec(input)
-    if (share_match === null) throw new Error('Input not a share')
-    if (share_match.groups === undefined) throw new Error('Could not match share parts')
+    if (share_match === null) throw new Error("Input not a share")
+    if (share_match.groups === undefined)
+      throw new Error("Could not match share parts")
     const { share_id, share_req, data, signature, pubkey } = share_match.groups
 
-    const imported_data = fromBase64String(data, BASE64OPTIONS)
+    const imported_data = fb64(data)
     const imported_share_id = share_id ? parseInt(share_id) : undefined
     const imported_share_req = share_req ? parseInt(share_req) : undefined
-    const imported_signature = signature ? fromBase64String(signature, BASE64OPTIONS) : undefined
-    const imported_pubkey = pubkey ? fromBase64String(pubkey, BASE64OPTIONS) : undefined
+    const imported_signature = signature ? fb64(signature) : undefined
+    const imported_pubkey = pubkey ? fb64(pubkey) : undefined
 
     const built_pubkey = imported_pubkey
       ? await crypto.subtle.importKey(
           SIGN_PUBKEY_SHARE_FORMAT,
           imported_pubkey,
-          { name: SIGN_ALGO, namedCurve: SIGN_CURVE },
+          KEY_ALGO,
           true,
-          ['verify']
+          ["verify"]
         )
       : undefined
 
     const result = new ShareFormatter(imported_data, {
       share_id: imported_share_id,
-      share_requirement: imported_share_req
+      share_requirement: imported_share_req,
     })
     result.pubkey = built_pubkey
     result.signature = imported_signature
@@ -116,30 +129,31 @@ export class ShareFormatter {
 
   async toString(): Promise<string> {
     if (this.share_id === undefined) {
-      return toBase64String(this.share_data, BASE64OPTIONS)
+      return tb64(this.share_data)
     }
     const str_share_id = this.share_id.toString()
-    let str_share_req = ''
+    let str_share_req = ""
     if (this.share_requirement !== undefined) {
-      str_share_req = 'u' + this.share_requirement.toString()
+      str_share_req = "u" + this.share_requirement.toString()
     }
-    const str_share_data = toBase64String(this.share_data, BASE64OPTIONS)
+    const str_share_data = tb64(this.share_data)
     const str_signature = this.signature
-      ? toBase64String(new Uint8Array(this.signature), BASE64OPTIONS)
+      ? tb64(new Uint8Array(this.signature))
       : undefined
 
     const str_pubkey = this.pubkey
-      ? toBase64String(
-          new Uint8Array(await crypto.subtle.exportKey(SIGN_PUBKEY_SHARE_FORMAT, this.pubkey)),
-          BASE64OPTIONS
+      ? tb64(
+          new Uint8Array(
+            await crypto.subtle.exportKey(SIGN_PUBKEY_SHARE_FORMAT, this.pubkey)
+          )
         )
       : undefined
 
     let result = `${SHRZ_PREFIX}:${str_share_id}${str_share_req}:${str_share_data}`
     if (str_signature !== undefined) {
-      result += ':' + str_signature
+      result += ":" + str_signature
       if (str_pubkey !== undefined) {
-        result += ':' + str_pubkey
+        result += ":" + str_pubkey
       }
     }
     return result
@@ -147,34 +161,29 @@ export class ShareFormatter {
 }
 
 export async function generateKeyPair(): Promise<CryptoKeyPair> {
-  const keyPair = await crypto.subtle.generateKey(
-    { name: SIGN_ALGO, namedCurve: SIGN_CURVE },
-    true,
-    ['sign', 'verify']
-  )
+  const keyPair = await crypto.subtle.generateKey(KEY_ALGO, true, [
+    "sign",
+    "verify",
+  ])
   return keyPair
 }
 
 async function getPublicKey(privateKey: CryptoKey): Promise<CryptoKey> {
-  const x = await crypto.subtle.exportKey('jwk', privateKey)
+  const x = await crypto.subtle.exportKey("jwk", privateKey)
   delete x.d
-  x.key_ops = ['verify']
-  return await crypto.subtle.importKey(
-    'jwk',
-    x,
-    { name: SIGN_ALGO, namedCurve: SIGN_CURVE },
-    true,
-    ['verify']
-  )
+  x.key_ops = ["verify"]
+  return await crypto.subtle.importKey("jwk", x, KEY_ALGO, true, ["verify"])
 }
 
-export async function fromRawPrivateKey(privateKey_raw: Uint8Array): Promise<CryptoKeyPair> {
+export async function fromRawPrivateKey(
+  privateKey_raw: Uint8Array
+): Promise<CryptoKeyPair> {
   const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
+    "pkcs8",
     privateKey_raw,
-    { name: SIGN_ALGO, namedCurve: SIGN_CURVE },
+    KEY_ALGO,
     true,
-    ['sign']
+    ["sign"]
   )
   const publicKey = await getPublicKey(privateKey)
 

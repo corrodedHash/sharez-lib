@@ -1,4 +1,4 @@
-import typescript from "@rollup/plugin-typescript";
+import typescript from "@rollup/plugin-typescript"
 
 /**@type {import('rollup').RollupOptions} */
 const options = {
@@ -18,6 +18,6 @@ const options = {
       exclude: ["**/*.test.ts"],
     }),
   ],
-};
+}
 
-export default options;
+export default options

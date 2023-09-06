@@ -1,4 +1,4 @@
-import type { BuildConfig } from "unbuild";
+import type { BuildConfig } from "unbuild"
 
 const result: BuildConfig = {
   entries: [{ input: "./src/index" }],
@@ -6,5 +6,5 @@ const result: BuildConfig = {
     emitCJS: true,
   },
   declaration: "compatible",
-};
-export default result;
+}
+export default result
