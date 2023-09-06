@@ -34,15 +34,20 @@ export class Polynomial<T> {
   }
 
   add(other: Polynomial<T>): Polynomial<T> {
-    const result_coefficients = zero_array(
-      Math.max(this.coefficients.length, other.coefficients.length)
-    ).map(this.handler.zero)
-    for (let i = 0; i < result_coefficients.length; i++) {
-      result_coefficients[i] = this.handler.add(
-        this.coefficients[i] ?? this.handler.zero(),
-        other.coefficients[i] ?? this.handler.zero()
-      )
-    }
+    const max_len = Math.max(
+      this.coefficients.length,
+      other.coefficients.length
+    )
+    const coefficients = zero_array(max_len).map(
+      (_, i) =>
+        [
+          this.coefficients[i] ?? this.handler.zero(),
+          other.coefficients[i] ?? this.handler.zero(),
+        ] as const
+    )
+    const result_coefficients = coefficients.map(([t, o]) =>
+      this.handler.add(t, o)
+    )
     return new Polynomial(result_coefficients, this.handler)
   }
 
