@@ -58,6 +58,11 @@ export class Polynomial<T> {
   }
 }
 
+/**
+ * @param x_values X values of the points used for interpolating the polynomial
+ * @param y_values Y values of the points used for interpolating the polynomial
+ * @returns Polynomial which passes through all provided points
+ */
 export function interpolate<T>(
   x_values: T[],
   y_values: T[],

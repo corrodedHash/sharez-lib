@@ -1,5 +1,5 @@
 import type { HandlerType } from "./polynomial"
-import { Polynomial } from "./polynomial"
+import { Polynomial, interpolate } from "./polynomial"
 import { GF256Element } from "./GF256"
 
 const GF256Handler: HandlerType<GF256Element> = {
@@ -17,40 +17,6 @@ class GF256Polynomial extends Polynomial<GF256Element> {
   }
 }
 
-/**
- * @param x_values X values of the points used for interpolating the polynomial
- * @param y_values Y values of the points used for interpolating the polynomial
- * @returns Coefficients for polynomial in order [x^0, x^1,...]
- */
-function get_polynomial(
-  x_values: GF256Element[],
-  y_values: GF256Element[]
-): GF256Polynomial {
-  if (x_values.length === 1) {
-    return new Polynomial(y_values, GF256Handler)
-  }
-  function lagrange_base(index: number): GF256Polynomial {
-    const filtered_points = x_values.filter((_, v_index) => v_index !== index)
-    const denominator = filtered_points
-      .map((v) => x_values[index].add(v))
-      .reduce((a, b) => a.mul(b))
-
-    const numerator = filtered_points
-      .map((v) => new Polynomial([v, new GF256Element(1)], GF256Handler))
-      .reduce((a, b) => a.multiply(b))
-
-    return numerator.multiply(
-      new Polynomial([new GF256Element(1).div(denominator)], GF256Handler)
-    )
-  }
-
-  return y_values
-    .map((v, index) =>
-      lagrange_base(index).multiply(new Polynomial([v], GF256Handler))
-    )
-    .reduce((a, b) => a.add(b))
-}
-
 export class SSS {
   polynomials: GF256Polynomial[]
 
@@ -59,15 +25,16 @@ export class SSS {
   }
 
   static from_secret(secret: Uint8Array, threshold: number): SSS {
+    function generateCoefficients(secret_byte: number) {
+      const coefficients = new Uint8Array(threshold - 1)
+      crypto.getRandomValues(coefficients)
+      const galois_coefficients = Array.from(coefficients).map(
+        (v) => new GF256Element(v)
+      )
+      return [new GF256Element(secret_byte), ...galois_coefficients]
+    }
     const polynomials = Array.from(secret)
-      .map((v) => {
-        const coefficients = new Uint8Array(threshold - 1)
-        crypto.getRandomValues(coefficients)
-        const galois_coefficients = Array.from(coefficients).map(
-          (v) => new GF256Element(v)
-        )
-        return [new GF256Element(v), ...galois_coefficients]
-      })
+      .map(generateCoefficients)
       .map((v) => new GF256Polynomial(v))
     return new SSS(polynomials)
   }
@@ -78,9 +45,10 @@ export class SSS {
       shares.map((row) => row[colIndex])
     )
     const polynomials = transposed_shares.map((share_bytes) =>
-      get_polynomial(
+      interpolate(
         share_ids.map((shareID) => new GF256Element(shareID)),
-        share_bytes.map((shareByte) => new GF256Element(shareByte))
+        share_bytes.map((shareByte) => new GF256Element(shareByte)),
+        GF256Handler
       )
     )
     return new SSS(polynomials)
