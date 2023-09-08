@@ -19,32 +19,32 @@ function tb64(input: Uint8Array): string {
   return toBase64String(input, BASE64OPTIONS)
 }
 
-export class ShareFormatter {
-  share_data: Uint8Array
-  share_id: number | undefined
-  share_requirement: number | undefined
+export class Share {
+  /** The y-values for each byte in the SSS */
+  yValues: Uint8Array
+  /** The x value used for each byte */
+  xValue: number | undefined
+  /** The degree of the polynomial in the SSS */
+  requirement: number | undefined
   pubkey: CryptoKey | undefined
   signature: ArrayBuffer | undefined
 
   constructor(
-    share_data: Uint8Array,
+    yValues: Uint8Array,
     info?: Partial<{
-      share_id: number
-      share_requirement: number
+      xValue: number
+      requirement: number
     }>
   ) {
-    this.share_id = info?.share_id
-    this.share_requirement = info?.share_requirement
-    this.share_data = share_data
+    this.xValue = info?.xValue
+    this.requirement = info?.requirement
+    this.yValues = yValues
   }
 
   private get_signable_data(): Uint8Array {
-    const id_array = this.share_id !== undefined ? [this.share_id] : []
-    const req_array =
-      this.share_requirement !== undefined ? [this.share_requirement] : []
-    return Uint8Array.from(
-      id_array.concat(req_array).concat([...this.share_data])
-    )
+    const id_array = this.xValue !== undefined ? [this.xValue] : []
+    const req_array = this.requirement !== undefined ? [this.requirement] : []
+    return Uint8Array.from(id_array.concat(req_array).concat([...this.yValues]))
   }
 
   async sign(keypair: CryptoKeyPair) {
@@ -82,13 +82,13 @@ export class ShareFormatter {
     )
   }
 
-  static async fromString(input: string): Promise<ShareFormatter> {
+  static async fromString(input: string): Promise<Share> {
     const base64chars = "a-zA-Z0-9-_"
 
     const raw_regex = new RegExp(`^[${base64chars}]+$`)
     const raw_match = raw_regex.exec(input)
     if (raw_match !== null) {
-      return new ShareFormatter(fb64(raw_match[0]))
+      return new Share(fb64(raw_match[0]))
     }
 
     const sharez_regex = new RegExp(
@@ -118,9 +118,9 @@ export class ShareFormatter {
         )
       : undefined
 
-    const result = new ShareFormatter(imported_data, {
-      share_id: imported_share_id,
-      share_requirement: imported_share_req,
+    const result = new Share(imported_data, {
+      xValue: imported_share_id,
+      requirement: imported_share_req,
     })
     result.pubkey = built_pubkey
     result.signature = imported_signature
@@ -128,15 +128,15 @@ export class ShareFormatter {
   }
 
   async toString(): Promise<string> {
-    if (this.share_id === undefined) {
-      return tb64(this.share_data)
+    if (this.xValue === undefined) {
+      return tb64(this.yValues)
     }
-    const str_share_id = this.share_id.toString()
+    const str_share_id = this.xValue.toString()
     let str_share_req = ""
-    if (this.share_requirement !== undefined) {
-      str_share_req = "u" + this.share_requirement.toString()
+    if (this.requirement !== undefined) {
+      str_share_req = "u" + this.requirement.toString()
     }
-    const str_share_data = tb64(this.share_data)
+    const str_share_data = tb64(this.yValues)
     const str_signature = this.signature
       ? tb64(new Uint8Array(this.signature))
       : undefined

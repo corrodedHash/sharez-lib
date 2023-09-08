@@ -1,6 +1,7 @@
 import type { HandlerType } from "./polynomial"
 import { Polynomial, interpolate } from "./polynomial"
 import { GF256Element } from "./GF256"
+import { Share } from "./share"
 
 const GF256Handler: HandlerType<GF256Element> = {
   add: (a, b) => a.add(b),
@@ -54,13 +55,29 @@ export class SSS {
     return new SSS(polynomials)
   }
 
-  get_share(id: number): Uint8Array {
-    return Uint8Array.from(
-      this.polynomials.map((v) => v.evaluate(new GF256Element(id)).bits)
-    )
+  private get_x_values(x: number): Uint8Array {
+    const gf_x = new GF256Element(x)
+    return Uint8Array.from(this.polynomials.map((v) => v.evaluate(gf_x).bits))
   }
 
-  get_secret(): Uint8Array {
-    return this.get_share(0)
+  share(x: number): Share {
+    if (x < 1) {
+      // Make sure the secret does not get leaked as a share
+      throw new Error(
+        "To retrieve secret, call `secret` property. `x` must be non-zero positive"
+      )
+    }
+    return new Share(this.get_x_values(x), {
+      xValue: x,
+      requirement: this.requiredShares,
+    })
+  }
+
+  public get secret(): Uint8Array {
+    return this.get_x_values(0)
+  }
+
+  public get requiredShares(): number {
+    return this.polynomials[0].coefficients.length
   }
 }
