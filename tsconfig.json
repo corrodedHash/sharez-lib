@@ -1,8 +1,4 @@
 {
   "extends": "./tsconfig.common.json",
-  "compilerOptions": {
-    "module": "ESNext",
-    "declaration": true
-  },
   "exclude": ["src/**/*.test.*"]
 }

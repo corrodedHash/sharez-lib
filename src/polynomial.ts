@@ -1,4 +1,4 @@
-import { zero_array } from "./basic"
+import { zero_array } from "./util/common"
 
 export type HandlerType<T> = {
   mul: (a: T, b: T) => T

@@ -1,4 +1,4 @@
-import { fromBase64String, toBase64String } from "./basic"
+import { fromBase64String, toBase64String } from "./util/base64"
 
 export const KEY_ALGO: EcKeyImportParams = {
   name: "ECDSA",
