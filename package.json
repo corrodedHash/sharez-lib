@@ -1,7 +1,7 @@
 {
   "name": "sharez",
   "version": "0.1.0",
-  "description": "Library to split secrets using Shamir's Secret Sharing",
+  "description": "Split secret data into multipl shares using Shamir's Secret Sharing",
   "exports": {
     ".": {
       "import": "./dist/index.mjs",
@@ -21,8 +21,22 @@
   "files": [
     "dist/*"
   ],
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "shamir",
+    "secret",
+    "sharing",
+    "cryptography",
+    "sss"
+  ],
+  "homepage": "https://github.com/corrodedHash/sharez-lib",
+  "bugs": {
+    "url": "https://github.com/corrodedHash/sharez-lib/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/corrodedHash/sharez-lib.git"
+  },
+  "author": "Lukas Wölfer",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.3.6",
