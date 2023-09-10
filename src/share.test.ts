@@ -1,6 +1,6 @@
 import { describe, it } from "mocha"
 import { assert } from "chai"
-import { getRandomInt } from "./basic"
+import { getRandomInt } from "./util/common"
 
 import { Share, generateKeyPair } from "./share"
 

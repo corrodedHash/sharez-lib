@@ -40,11 +40,21 @@ export class SSS {
     return new SSS(polynomials)
   }
 
-  static from_shares(shares: Uint8Array[], share_ids: number[]): SSS {
+  static from_shares(shares: Share[]): SSS {
+    if (shares.length < 1) {
+      throw new Error("Empty share array")
+    }
     // `shares[0]` is the share of the first user, `transposed_shares[0]` is the first byte of each share
-    const transposed_shares = Array.from(shares[0]).map((_, colIndex) =>
-      shares.map((row) => row[colIndex])
+    const transposed_shares = Array.from(shares[0].yValues).map((_, colIndex) =>
+      shares.map((row) => row.yValues[colIndex])
     )
+
+    const share_ids = shares
+      .map((v) => v.xValue)
+      .filter((v): v is Exclude<typeof v, undefined> => v !== undefined)
+    if (share_ids.length !== shares.length) {
+      throw new Error("Share did not contain xValue")
+    }
     const polynomials = transposed_shares.map((share_bytes) =>
       interpolate(
         share_ids.map((shareID) => new GF256Element(shareID)),
