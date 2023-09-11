@@ -4,6 +4,8 @@ import { getRandomInt } from "./util/common"
 
 import { Share, generateKeyPair } from "./share"
 
+import { ShareEncoder, ShareDecoder } from "./shareSerialization"
+
 function randomData(length: number): Uint8Array {
   return Uint8Array.from([...Array(length)].map(() => getRandomInt(0, 256)))
 }
@@ -14,9 +16,9 @@ describe("Share Formatter", () => {
       const data = randomData(5)
       const share_id = getRandomInt(1, 256)
       const shared_formatter = new Share(data, { xValue: share_id })
-      const shared = await shared_formatter.toString()
+      const shared = await new ShareEncoder().encode(shared_formatter)
       assert.deepEqual(
-        await Share.fromString(shared),
+        await new ShareDecoder().decode(shared),
         shared_formatter,
         `${share_id} ${shared} ${data}`
       )
@@ -29,8 +31,8 @@ describe("Share Formatter", () => {
     const shared_formatter = new Share(data, { xValue: share_id })
     await shared_formatter.sign(kp)
     assert(await shared_formatter.verify())
-    const shared = await shared_formatter.toString()
-    const rebuilt = await Share.fromString(shared)
+    const shared = await new ShareEncoder().encode(shared_formatter)
+    const rebuilt = await new ShareDecoder().decode(shared)
     assert.deepEqual(rebuilt, shared_formatter)
     assert(await rebuilt.verify())
   })
