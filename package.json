@@ -15,6 +15,7 @@
   "scripts": {
     "test": "TS_NODE_PROJECT='tsconfig.mocha.json' mocha --full-trace",
     "build": "unbuild",
+    "prepare": "unbuild",
     "lint": "prettier -c 'src/**' && eslint .",
     "fix": "prettier -w 'src/**'"
   },
