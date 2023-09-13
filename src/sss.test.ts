@@ -15,4 +15,9 @@ describe("Secret sharing sanity check", () => {
   it("reconstructs SSS correctly", () => {
     assert.deepEqual(reconstructed.secret, Uint8Array.from([1]))
   })
+  it("serializes to JSON", () => {
+    const serialized = JSON.stringify(share_gen)
+    const deserialized = SSS.from_json(serialized)
+    assert.deepEqual(deserialized, share_gen)
+  })
 })

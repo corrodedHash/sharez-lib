@@ -25,11 +25,11 @@ export class SSS {
     this.polynomials = polynomials
   }
 
-  toJSON(): string {
+  toJSON(): number[][] {
     const arrayForm = this.polynomials.map((v) =>
       v.coefficients.map((e) => e.bits)
     )
-    return JSON.stringify(arrayForm)
+    return arrayForm
   }
 
   static from_json(json: string): SSS {
