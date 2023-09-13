@@ -25,6 +25,28 @@ export class SSS {
     this.polynomials = polynomials
   }
 
+  toJSON(): string {
+    const arrayForm = this.polynomials.map((v) =>
+      v.coefficients.map((e) => e.bits)
+    )
+    return JSON.stringify(arrayForm)
+  }
+
+  static from_json(json: string): SSS {
+    const parsed = JSON.parse(json)
+    if (!Array.isArray(parsed)) throw new Error("Json is not an array")
+    const polynomials = parsed.map((v, index) => {
+      if (!Array.isArray(v))
+        throw new Error(`Polynomial #${index} is not an array`)
+      const coefficients = v.map((e, pindex) => {
+        if (typeof e !== "number")
+          throw new Error(`Coefficient #${index}/${pindex} not a number`)
+        return new GF256Element(e)
+      })
+      return new GF256Polynomial(coefficients)
+    })
+    return new SSS(polynomials)
+  }
   static from_secret(secret: Uint8Array, threshold: number): SSS {
     function generateCoefficients(secret_byte: number) {
       const coefficients = new Uint8Array(threshold - 1)
