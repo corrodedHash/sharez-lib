@@ -22,4 +22,7 @@ export class BarycentricPolynomial<T> {
     })
     return new BarycentricPolynomial(points, handler)
   }
+//   evaluate(x: T) : T {
+//     const summands = this.points.map((v)=>)
+//   }
 }
