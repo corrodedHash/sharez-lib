@@ -61,47 +61,47 @@ export class Polynomial<T> {
       .map((v, i) => this.handler.mul(v, x_powers[i]))
       .reduce((a, b) => this.handler.add(a, b))
   }
-}
 
-/**
- * @param x_values X values of the points used for interpolating the polynomial
- * @param y_values Y values of the points used for interpolating the polynomial
- * @returns Polynomial which passes through all provided points
- */
-export function interpolate<T>(
-  x_values: T[],
-  y_values: T[],
-  handler: HandlerType<T>
-): Polynomial<T> {
-  if (x_values.length === 1) {
-    return new Polynomial(y_values, handler)
-  }
-  function lagrange_base(index: number): Polynomial<T> {
-    const chosen_x = x_values[index]
-    const filtered_x = x_values.filter((_, v_index) => v_index !== index)
+  /**
+   * @param x_values X values of the points used for interpolating the polynomial
+   * @param y_values Y values of the points used for interpolating the polynomial
+   * @returns Polynomial which passes through all provided points
+   */
+  static interpolate<T>(
+    x_values: T[],
+    y_values: T[],
+    handler: HandlerType<T>
+  ): Polynomial<T> {
+    if (x_values.length === 1) {
+      return new Polynomial(y_values, handler)
+    }
+    function lagrange_base(index: number): Polynomial<T> {
+      const chosen_x = x_values[index]
+      const filtered_x = x_values.filter((_, v_index) => v_index !== index)
 
-    const denominator = filtered_x
-      .map((v) => handler.sub(chosen_x, v))
-      .reduce((a, b) => handler.mul(a, b))
+      const denominator = filtered_x
+        .map((v) => handler.sub(chosen_x, v))
+        .reduce((a, b) => handler.mul(a, b))
 
-    const numerator = filtered_x
-      .map(
-        (v) =>
-          new Polynomial(
-            [handler.sub(handler.zero(), v), handler.one()],
-            handler
-          )
+      const numerator = filtered_x
+        .map(
+          (v) =>
+            new Polynomial(
+              [handler.sub(handler.zero(), v), handler.one()],
+              handler
+            )
+        )
+        .reduce((a, b) => a.multiply(b))
+      const result = numerator.multiply(
+        new Polynomial([handler.div(handler.one(), denominator)], handler)
       )
-      .reduce((a, b) => a.multiply(b))
-    const result = numerator.multiply(
-      new Polynomial([handler.div(handler.one(), denominator)], handler)
+      return result
+    }
+
+    const bases = y_values.map((v, index) =>
+      lagrange_base(index).multiply(new Polynomial([v], handler))
     )
-    return result
+
+    return bases.reduce((a, b) => a.add(b))
   }
-
-  const bases = y_values.map((v, index) =>
-    lagrange_base(index).multiply(new Polynomial([v], handler))
-  )
-
-  return bases.reduce((a, b) => a.add(b))
 }

@@ -1,5 +1,5 @@
 import type { HandlerType } from "./polynomial"
-import { Polynomial, interpolate } from "./polynomial"
+import { Polynomial } from "./polynomial"
 import { GF256Element } from "./GF256"
 import { Share } from "./share"
 
@@ -78,7 +78,7 @@ export class SSS {
       throw new Error("Share did not contain xValue")
     }
     const polynomials = transposed_shares.map((share_bytes) =>
-      interpolate(
+      GF256Polynomial.interpolate(
         share_ids.map((shareID) => new GF256Element(shareID)),
         share_bytes.map((shareByte) => new GF256Element(shareByte)),
         GF256Handler
