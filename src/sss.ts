@@ -1,5 +1,4 @@
 import type { ArithmeticHandler } from "./polynomial"
-import { Polynomial } from "./polynomial"
 import { GF256Element } from "./GF256"
 import { Share } from "./share"
 import { BarycentricPolynomial, EqualityHandler } from "./barycentric"
@@ -15,7 +14,13 @@ const GF256Handler: ArithmeticHandler<GF256Element> &
   eq: (a, b) => a.bits == b.bits,
 }
 
-class GF256Polynomial extends BarycentricPolynomial<GF256Element> {}
+class GF256Polynomial extends BarycentricPolynomial<GF256Element> {
+  constructor(
+    points: { x: GF256Element; y: GF256Element; weight: GF256Element }[]
+  ) {
+    super(points, GF256Handler)
+  }
+}
 
 export class SSS {
   polynomials: GF256Polynomial[]
@@ -24,9 +29,9 @@ export class SSS {
     this.polynomials = polynomials
   }
 
-  toJSON(): number[][] {
+  toJSON(): { x: number; y: number; weight: number }[][] {
     const arrayForm = this.polynomials.map((v) =>
-      v.coefficients.map((e) => e.bits)
+      v.points.map((e) => ({ x: e.x.bits, y: e.y.bits, weight: e.weight.bits }))
     )
     return arrayForm
   }
@@ -38,9 +43,20 @@ export class SSS {
       if (!Array.isArray(v))
         throw new Error(`Polynomial #${index} is not an array`)
       const coefficients = v.map((e, pindex) => {
-        if (typeof e !== "number")
-          throw new Error(`Coefficient #${index}/${pindex} not a number`)
-        return new GF256Element(e)
+        const x = e.x
+        const y = e.y
+        const weight = e.weight
+        if (typeof x !== "number")
+          throw new Error(`X #${index}/${pindex} not a number`)
+        if (typeof y !== "number")
+          throw new Error(`Y #${index}/${pindex} not a number`)
+        if (typeof weight !== "number")
+          throw new Error(`Weight #${index}/${pindex} not a number`)
+        return {
+          x: new GF256Element(x),
+          y: new GF256Element(y),
+          weight: new GF256Element(weight),
+        }
       })
       return new GF256Polynomial(coefficients)
     })
@@ -59,8 +75,7 @@ export class SSS {
       )
       return GF256Polynomial.interpolate(x_values, y_values, GF256Handler)
     }
-    const polynomials = Array.from(secret)
-      .map(generateCoefficients)
+    const polynomials = Array.from(secret).map(generateCoefficients)
     return new SSS(polynomials)
   }
 
@@ -112,6 +127,6 @@ export class SSS {
   }
 
   public get requiredShares(): number {
-    return this.polynomials[0].coefficients.length
+    return this.polynomials[0].points.length
   }
 }
