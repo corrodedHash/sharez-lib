@@ -1,9 +1,9 @@
 import { describe, it } from "mocha"
 import { assert } from "chai"
-import type { HandlerType } from "./polynomial"
-import { Polynomial, interpolate } from "./polynomial"
+import type { ArithmeticHandler } from "./polynomial"
+import { Polynomial } from "./polynomial"
 
-const IntegerHandler: HandlerType<number> = {
+const IntegerHandler: ArithmeticHandler<number> = {
   add: (a, b) => a + b,
   sub: (a, b) => a - b,
   div: (a, b) => a / b,
@@ -33,12 +33,12 @@ describe("Polynomial", () => {
   })
   it("interpolates", () => {
     assert.deepEqual(
-      interpolate([-1, 0, 1], [2, 1, 2], IntegerHandler),
+      Polynomial.interpolate([-1, 0, 1], [2, 1, 2], IntegerHandler),
       new Polynomial([1, 0, 1], IntegerHandler)
     )
   })
   it("interpolates cubic", () => {
-    const cubic = interpolate([-1, 0, 1, 2], [-1, 0, 1, 8], IntegerHandler)
+    const cubic = Polynomial.interpolate([-1, 0, 1, 2], [-1, 0, 1, 8], IntegerHandler)
     cubic.coefficients = cubic.coefficients.map(Math.round)
     assert.deepEqual(cubic, new Polynomial([0, 0, 0, 1], IntegerHandler))
   })

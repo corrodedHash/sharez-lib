@@ -1,22 +1,21 @@
-import type { HandlerType } from "./polynomial"
+import type { ArithmeticHandler } from "./polynomial"
 import { Polynomial } from "./polynomial"
 import { GF256Element } from "./GF256"
 import { Share } from "./share"
+import { BarycentricPolynomial, EqualityHandler } from "./barycentric"
 
-const GF256Handler: HandlerType<GF256Element> = {
+const GF256Handler: ArithmeticHandler<GF256Element> &
+  EqualityHandler<GF256Element> = {
   add: (a, b) => a.add(b),
   sub: (a, b) => a.add(b),
   mul: (a, b) => a.mul(b),
   div: (a, b) => a.div(b),
   zero: () => new GF256Element(0),
   one: () => new GF256Element(1),
+  eq: (a, b) => a.bits == b.bits,
 }
 
-class GF256Polynomial extends Polynomial<GF256Element> {
-  constructor(coefficients: GF256Element[]) {
-    super(coefficients, GF256Handler)
-  }
-}
+class GF256Polynomial extends BarycentricPolynomial<GF256Element> {}
 
 export class SSS {
   polynomials: GF256Polynomial[]
@@ -49,16 +48,19 @@ export class SSS {
   }
   static from_secret(secret: Uint8Array, threshold: number): SSS {
     function generateCoefficients(secret_byte: number) {
-      const coefficients = new Uint8Array(threshold - 1)
-      crypto.getRandomValues(coefficients)
-      const galois_coefficients = Array.from(coefficients).map(
+      const random_points = new Uint8Array(threshold - 1)
+      crypto.getRandomValues(random_points)
+      const galois_coefficients = Array.from(random_points).map(
         (v) => new GF256Element(v)
       )
-      return [new GF256Element(secret_byte), ...galois_coefficients]
+      const y_values = [new GF256Element(secret_byte), ...galois_coefficients]
+      const x_values = [...new Array(threshold).keys()].map(
+        (v) => new GF256Element(v)
+      )
+      return GF256Polynomial.interpolate(x_values, y_values, GF256Handler)
     }
     const polynomials = Array.from(secret)
       .map(generateCoefficients)
-      .map((v) => new GF256Polynomial(v))
     return new SSS(polynomials)
   }
 

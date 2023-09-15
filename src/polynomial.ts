@@ -1,6 +1,6 @@
 import { zero_array } from "./util/common"
 
-export type HandlerType<T> = {
+export type ArithmeticHandler<T> = {
   mul: (a: T, b: T) => T
   div: (a: T, b: T) => T
   add: (a: T, b: T) => T
@@ -11,8 +11,8 @@ export type HandlerType<T> = {
 
 export class Polynomial<T> {
   coefficients: T[]
-  handler: HandlerType<T>
-  constructor(coefficients: T[], handler: HandlerType<T>) {
+  handler: ArithmeticHandler<T>
+  constructor(coefficients: T[], handler: ArithmeticHandler<T>) {
     this.coefficients = coefficients
     this.handler = handler
   }
@@ -70,7 +70,7 @@ export class Polynomial<T> {
   static interpolate<T>(
     x_values: T[],
     y_values: T[],
-    handler: HandlerType<T>
+    handler: ArithmeticHandler<T>
   ): Polynomial<T> {
     if (x_values.length === 1) {
       return new Polynomial(y_values, handler)
