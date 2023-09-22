@@ -2,7 +2,8 @@ import { describe, it } from "mocha"
 import { assert } from "chai"
 import { getRandomInt } from "./util/common"
 
-import { Share, generateKeyPair } from "./share"
+import { Share } from "./share"
+import { generateKeyPair, sign, verify } from "./shareSignature"
 
 import { ShareEncoder, ShareDecoder } from "./shareSerialization"
 
@@ -15,10 +16,11 @@ describe("Share Formatter", () => {
     for (let i = 0; i < 30; i++) {
       const data = randomData(5)
       const share_id = getRandomInt(1, 256)
-      const shared_formatter = new Share(data, { xValue: share_id })
+      const shared_formatter: Share = { yValues: data, xValue: share_id }
       const shared = await new ShareEncoder().encode(shared_formatter)
+      const { share: decodedShare } = await new ShareDecoder().decode(shared)
       assert.deepEqual(
-        await new ShareDecoder().decode(shared),
+        decodedShare,
         shared_formatter,
         `${share_id} ${shared} ${data}`
       )
@@ -28,12 +30,18 @@ describe("Share Formatter", () => {
     const kp = await generateKeyPair()
     const data = randomData(5)
     const share_id = getRandomInt(1, 256)
-    const shared_formatter = new Share(data, { xValue: share_id })
-    await shared_formatter.sign(kp)
-    assert(await shared_formatter.verify())
-    const shared = await new ShareEncoder().encode(shared_formatter)
-    const rebuilt = await new ShareDecoder().decode(shared)
-    assert.deepEqual(rebuilt, shared_formatter)
-    assert(await rebuilt.verify())
+    const shared_formatter: Share = { yValues: data, xValue: share_id }
+    const share_signature = await sign(shared_formatter, kp)
+    assert(await verify(shared_formatter, share_signature))
+    const shared = await new ShareEncoder().encode(
+      shared_formatter,
+      share_signature
+    )
+    const { share: rebuiltShare, signature: rebuiltSignature } =
+      await new ShareDecoder().decode(shared)
+    assert.deepEqual(rebuiltShare, shared_formatter)
+    assert.notStrictEqual(rebuiltSignature, undefined)
+    if (rebuiltSignature === undefined) throw new Error("Make linter happy")
+    assert(await verify(rebuiltShare, rebuiltSignature))
   })
 })

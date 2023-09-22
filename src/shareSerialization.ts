@@ -1,4 +1,10 @@
-import { KEY_ALGO, SHRZ_PREFIX, SIGN_PUBKEY_SHARE_FORMAT, Share } from "./share"
+import { Share } from "./share"
+import {
+  KEY_ALGO,
+  SHRZ_PREFIX,
+  SIGN_PUBKEY_SHARE_FORMAT,
+  ShareSignature,
+} from "./shareSignature"
 import { fromBase64String, toBase64String } from "./util/base64"
 
 const BASE64OPTIONS = { padding: false, extra_chars: "-_" }
@@ -11,7 +17,7 @@ function tb64(input: Uint8Array): string {
 }
 
 export class ShareEncoder {
-  async encode(share: Share): Promise<string> {
+  async encode(share: Share, signature?: ShareSignature): Promise<string> {
     if (share.xValue === undefined) {
       return tb64(share.yValues)
     }
@@ -21,16 +27,16 @@ export class ShareEncoder {
       str_share_req = "u" + share.requirement.toString()
     }
     const str_share_data = tb64(share.yValues)
-    const str_signature = share.signature
-      ? tb64(new Uint8Array(share.signature))
+    const str_signature = signature?.signature
+      ? tb64(new Uint8Array(signature?.signature))
       : undefined
 
-    const str_pubkey = share.pubkey
+    const str_pubkey = signature?.pubkey
       ? tb64(
           new Uint8Array(
             await crypto.subtle.exportKey(
               SIGN_PUBKEY_SHARE_FORMAT,
-              share.pubkey
+              signature?.pubkey
             )
           )
         )
@@ -48,13 +54,15 @@ export class ShareEncoder {
 }
 
 export class ShareDecoder {
-  async decode(input: string): Promise<Share> {
+  async decode(
+    input: string
+  ): Promise<{ share: Share; signature?: ShareSignature }> {
     const base64chars = "a-zA-Z0-9-_"
 
     const raw_regex = new RegExp(`^[${base64chars}]+$`)
     const raw_match = raw_regex.exec(input)
     if (raw_match !== null) {
-      return new Share(fb64(raw_match[0]))
+      return { share: { yValues: fb64(raw_match[0]) } }
     }
 
     const sharez_regex = new RegExp(
@@ -83,12 +91,23 @@ export class ShareDecoder {
         )
       : undefined
 
-    const result = new Share(imported_data, {
-      xValue: imported_share_id,
-      requirement: imported_share_req,
-    })
-    result.pubkey = built_pubkey
-    result.signature = imported_signature
-    return result
+    const result: Share = {
+      ...{ yValues: imported_data },
+      ...(imported_share_id !== undefined && { xValue: imported_share_id }),
+      ...(imported_share_req !== undefined && {
+        requirement: imported_share_req,
+      }),
+    }
+    const resultSignature: ShareSignature | undefined =
+      imported_signature !== undefined
+        ? {
+            pubkey: built_pubkey,
+            signature: imported_signature,
+          }
+        : undefined
+    return {
+      ...{ share: result },
+      ...(resultSignature !== undefined && { signature: resultSignature }),
+    }
   }
 }

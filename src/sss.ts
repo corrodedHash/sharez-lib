@@ -116,10 +116,11 @@ export class SSS {
         "To retrieve secret, call `secret` property. `x` must be non-zero positive"
       )
     }
-    return new Share(this.get_x_values(x), {
+    return {
+      yValues: this.get_x_values(x),
       xValue: x,
       requirement: this.requiredShares,
-    })
+    }
   }
 
   public get secret(): Uint8Array {
