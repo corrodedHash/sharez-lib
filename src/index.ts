@@ -8,4 +8,8 @@ export {
   sign,
   type ShareSignature,
 } from "./shareSignature"
-export { ShareEncoder, ShareDecoder } from "./shareSerialization"
+export {
+  ShareEncoder,
+  ShareDecoder,
+  type DecodedShare,
+} from "./shareSerialization"

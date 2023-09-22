@@ -53,10 +53,12 @@ export class ShareEncoder {
   }
 }
 
+export interface DecodedShare {
+  share: Share
+  signature?: ShareSignature
+}
 export class ShareDecoder {
-  async decode(
-    input: string
-  ): Promise<{ share: Share; signature?: ShareSignature }> {
+  async decode(input: string): Promise<DecodedShare> {
     const base64chars = "a-zA-Z0-9-_"
 
     const raw_regex = new RegExp(`^[${base64chars}]+$`)
